@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="highway.net.xml"/>
+        <route-files value="highway.rou.xml"/>
+    </input>
+
+    <time>
+        <begin value="0"/>
+        <end value="36050000"/>
+        <step-length value="0.1" />
+    </time>
+
+    <processing>
+        <collision.action value="remove" />
+        <collision.check-junctions value="true" />
+        <time-to-teleport  value="-1" />
+    </processing>
+
+    <report>
+        <no-step-log value="true" />  <!-- step log is refreshed many times, this will speed up the simulation -->
+    </report>
+
+    <gui_only>
+        <quit-on-end value="true" />
+        <start value="true" />
+    </gui_only>
+
+</configuration>
