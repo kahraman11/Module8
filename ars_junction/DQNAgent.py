@@ -21,6 +21,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.utils import plot_model
 from keras import initializers
+import createRoute
 
 import environment
 import matplotlib.pyplot as plt
@@ -39,12 +40,12 @@ MAX_STEPS       = 400
 
 
 class DQNAgent:
-    def __init__(self):
+    def __init__(self, epsilon):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=MEMORY_SIZE)
         self.gamma = 0.8  # discount rate
-        self.epsilon = 1.0  # exploration rate
+        self.epsilon = epsilon  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.999
         self.learning_rate = 0.001
@@ -80,7 +81,7 @@ class DQNAgent:
     def act(self, state, use_epsilon=True):
         if np.random.rand() <= self.epsilon and use_epsilon:
             return rn.randrange(self.action_size)
-        act_values = self.model.predict(state)
+        act_values = self.model.predict(state)  # voorspel de state
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
@@ -88,10 +89,10 @@ class DQNAgent:
         for _, state, action, reward, next_state, done in minibatch:
             target = reward
             if not done:
-                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
-            target_f = self.model.predict(state)
+                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0])) # voorspel de volgende state
+            target_f = self.model.predict(state) # voorspel de state
             target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+            self.model.fit(state, target_f, epochs=1, verbose=0) #train the neural network
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -107,6 +108,7 @@ def trainOrTest(batch_size, episodes, training):
 
         # reset the env for a new episode
         state = env.reset()
+        #createRoute.generate_random_routefile()
         state = np.reshape(state, [1, state_size])
 
         # Step through the episode until MAX_STEPS is reached
@@ -119,9 +121,9 @@ def trainOrTest(batch_size, episodes, training):
             if done:
                 break
 
-        #save function
-        if training and e % 10 == 0:
-             agent.save("save/cartpole-ddqn.h5")
+        # save function
+        if training:
+            agent.save("save/cartpole-ddqn.h5")
 
         # print statistics of this episode
         total_reward = sum([x[3] for x in agent.memory if x[0] == e])
@@ -151,16 +153,17 @@ if __name__ == "__main__":
     env = gym.make('SumoEnv-v0')
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
-    agent = DQNAgent()
 
     trained = False
-    if not trained :
+    if not trained:
+        agent = DQNAgent(1.0)
         env.log = False
         env.test = False
         env.start(gui=False)
         trainOrTest(BATCH_SIZE, episodes=TRAIN_EPISODES, training=True)
         env.close()
     else:
+        agent = DQNAgent(0.01)
         agent.load("save/cartpole-ddqn.h5")
     env.log = False
     env.test = True

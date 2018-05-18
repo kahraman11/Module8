@@ -34,6 +34,7 @@ def detectCollision(traci_data, veh_travelled_distance):
 
 def run():
     traci.vehicle.subscribe(VEH_ID, [VAR_SPEED, VAR_POSITION, VAR_DISTANCE])
+    #traci.vehicle.subscribe('AUTO1', [VAR_SPEED, VAR_POSITION, VAR_DISTANCE])
     # traci.vehicle.subscribe('0', [VAR_SPEED, VAR_POSITION])
 
     traci_data = traci.vehicle.getSubscriptionResults()

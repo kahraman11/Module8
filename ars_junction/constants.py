@@ -23,7 +23,8 @@ import sys
 
 PREFIX = "junction"
 TIME_STEPS = 50
-VEH_ID = 'AUTO'
+VEH_ID = 'AUTO0'
+CARS = []
 MAX_LANE_SPEED = 10
 DEPART_TIME = 5
 
