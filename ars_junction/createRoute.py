@@ -77,7 +77,7 @@ def generate_routefile(file_location="data/junction.rou.xml"):
 def generate_random_routefile(counter):
     file_location = "data/junction" + str(counter) + ".rou.xml"
     rn.seed()
-    amount_of_cars = rn.randint(0, 10)
+    amount_of_cars = rn.randint(0, 10)   # 0, 10
     print("Hoeveel auto's: ", amount_of_cars)
     temp_amount = amount_of_cars
     #CARS.append("AUTO")
@@ -182,7 +182,7 @@ def printvehicle(list, lengthoflist, xmlString, amountofcars):
             xmlString += "\" id=\"AUTO"
             xmlString += str(counter)
             xmlString += "\" route=\"5to3\""
-            xmlString += " type=\"right_car\""
+            xmlString += " type=\"left_car\""  # was right_car
         xmlString += " />\n"
         counter -= 1
         depart += 1

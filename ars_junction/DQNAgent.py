@@ -22,6 +22,8 @@ from keras.optimizers import Adam
 from keras.utils import plot_model
 from keras import initializers
 import createRoute
+import constants
+from constants import *
 
 import environment
 import matplotlib.pyplot as plt
@@ -30,17 +32,16 @@ import matplotlib.pyplot as plt
 File is based on the tutorial of 
 @url{https://keon.io/deep-q-learning/}
 """
-
 # constant values
-TRAIN_EPISODES  = 10000 #10000 is standaard
+TRAIN_EPISODES  = 10 #10000 is standaard
 TEST_EPISODES   = 100    #100 is standaard
 MEMORY_SIZE     = 2000
 BATCH_SIZE      = 32
-MAX_STEPS       = 400
+MAX_STEPS       = 800   #400 is standaard
 
 
 class DQNAgent:
-    def __init__(self, epsilon):
+    def __init__(self, epsilon, name):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=MEMORY_SIZE)
@@ -50,6 +51,7 @@ class DQNAgent:
         self.epsilon_decay = 0.999
         self.learning_rate = 0.001
         self.model = self._build_model()
+        self.name = name
 
     # Building neural Net for Deep-Q learning Model
     def _build_model(self):
@@ -103,36 +105,92 @@ class DQNAgent:
         self.model.save_weights(name)
 
 
-def trainOrTest(batch_size, episodes, training):
+def trainOrTest(batch_size, episodes, training):    # episodes = 10000
     for e in range(episodes):
-
         # reset the env for a new episode
         state = env.reset()
-        #createRoute.generate_random_routefile()
+        # createRoute.generate_random_routefile()
         state = np.reshape(state, [1, state_size])
 
+        # print("CARS: ", CARS)
+        counter = 0
+        new_agents = []
+
+        for car in CARS:
+            new_agents.append(agents[counter])
+            counter += 1
+            # print("New Agents aantal: ", len(new_agents))
+
+        states = []
+
         # Step through the episode until MAX_STEPS is reached
-        for _ in range(MAX_STEPS):
-            action = agent.act(state, use_epsilon=training)
-            next_state, reward, done, _ = env.step(action)
-            next_state = np.reshape(next_state, [1, state_size])
-            agent.remember(e, state, action, reward, next_state, done)
-            state = next_state
-            if done:
-                break
+        for step in range(MAX_STEPS):
+                actions = []
+                for car in CARS:
+                    done = False
+                    for agent in new_agents:
+                        if car == agent.name:
+
+                            # print("##############################states: ", states)
+                            for status in states:
+                                if status[0] == agent.name:
+                                    state = status[1]
+                                    break
+
+                            action = agent.act(state, use_epsilon=training)
+                            actions.append((agent.name, action))
+                            env.step(action, car)
+                            # print("Car: ", car, ", Agent: ", agent.name)
+                            # next_state, reward, done, _ = env.step(action, car)
+                            # next_state = np.reshape(next_state, [1, state_size])
+                            # agent.remember(e, state, action, reward, next_state, done)
+                            # state = next_state
+
+                env.simulationStep()
+
+            # while len(CARS) > 0:
+                for agent in new_agents:
+                    # print(car)
+                    # print(CARS)
+                    for car in list(CARS):
+                        if car == agent.name:
+                            next_state, reward, done, _ = env.secondStep(car)
+                            next_state = np.reshape(next_state, [1, state_size])
+
+                            for (name, actie) in actions:
+                                if name == agent.name:
+                                    action = actie
+                                    break
+
+                            agent.remember(e, state, action, reward, next_state, done)
+                            state = next_state
+                            states.append((car, state))
+                            # if done:
+                            #     try:
+                            #         # CARS.remove(car)
+                            #     except:
+                            #         pass
+                            break
+
+        i = 0
+        if training:
+            for agent in agents:
+                agent.save("save/cartpole-ddqn" + str(i) + ".h5")
+                i += 1
 
         # save function
-        if training:
-            agent.save("save/cartpole-ddqn.h5")
+        # if training:
+        #    agent.save("save/cartpole-ddqn.h5")
 
         # print statistics of this episode
-        total_reward = sum([x[3] for x in agent.memory if x[0] == e])
-        print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2}"
-              .format(e+1, episodes, total_reward, agent.epsilon))
+        for agent in new_agents:
+            total_reward = sum([x[3] for x in agent.memory if x[0] == e])
+            print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
+                  .format(e+1, episodes, total_reward, agent.epsilon, agent.name))
 
-        # Start experience replay if the agent.memory > batch_size
-        if len(agent.memory) > batch_size and training:
-            agent.replay(batch_size)
+            # Start experience replay if the agent.memory > batch_size
+            if len(agent.memory) > batch_size and training:
+                agent.replay(batch_size)
 
 
 def plotResults():
@@ -154,17 +212,25 @@ if __name__ == "__main__":
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
 
+    agents = []
+
     trained = False
     if not trained:
-        agent = DQNAgent(1.0)
         env.log = False
         env.test = False
         env.start(gui=False)
+        # print("CARS: ", CARS)
+        for x in range(0, 13):
+            agents.append(DQNAgent(1.0, "AUTO" + str(x)))
+        # print("Agents: ", agents)
+
         trainOrTest(BATCH_SIZE, episodes=TRAIN_EPISODES, training=True)
         env.close()
     else:
-        agent = DQNAgent(0.01)
-        agent.load("save/cartpole-ddqn.h5")
+        for x in range(0, 13):
+            agent = DQNAgent(0.01, "AUTO" + str(x))
+            agent.load("save/cartpole-ddqn" + str(x) + ".h5")
+            agents.append(agent)
     env.log = False
     env.test = True
     env.start(gui=True)
@@ -172,7 +238,7 @@ if __name__ == "__main__":
 
     plotResults()
 
-    agent.save('model')
-    plot_model(agent.model, show_shapes=True)
+    # agent.save('model')
+    # plot_model(agent.model, show_shapes=True)
 
     env.close()
