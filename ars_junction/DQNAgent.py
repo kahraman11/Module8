@@ -37,7 +37,7 @@ TRAIN_EPISODES  = 10 #10000 is standaard
 TEST_EPISODES   = 100    #100 is standaard
 MEMORY_SIZE     = 2000
 BATCH_SIZE      = 32
-MAX_STEPS       = 800   #400 is standaard
+MAX_STEPS       = 400   #400 is standaard
 
 
 class DQNAgent:
@@ -147,6 +147,9 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                             # state = next_state
 
                 env.simulationStep()
+
+                for car in CARS:
+
 
             # while len(CARS) > 0:
                 for agent in new_agents:
