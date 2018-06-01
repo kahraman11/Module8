@@ -46,80 +46,114 @@ redAccident = False
 # Returns (Bool, Bool) first bool is accident? second is penalty?
 def detectCollision(traci_data, veh_travelled_distance, car):
     # print("Car: ", car, " has travelled ", veh_travelled_distance, " meters")
-    if veh_travelled_distance > 0:
-            # print("eerste: ", abs(traci_data[vehicle][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]))
-            # print("tweede: ", abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]))
-
-            if car == VEH_ID:
-                for vehicle in CARS:
-                    if abs(traci_data[vehicle][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) <= 3.0 \
-                     and abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) <= 3.0:
-                        if traci_data[vehicle][VAR_POSITION][0] > traci_data[VEH_ID][VAR_POSITION][0]:  # Fout van rode auto
-                            for col in collisions:
-                                if col == (vehicle, VEH_ID):
-                                    return (False, False)
-                            print("Collision between: ", VEH_ID, " and ", vehicle)
-                            print("Fout van de rode auto@@@@@@@@@@@@@@")
-                            collisions.append((vehicle, VEH_ID))
-                            global redAccident
-                            redAccident = True
-                            return (True, True)
-
-            if car != VEH_ID and \
-                    abs(traci_data[car][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) <= 3.0\
-                    and abs(traci_data[car][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) <= 3.0:
-                    # and (abs(traci_data[car][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) > 0 or abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) > 0): # haal dit weg waarschijnlijk
+    try:
+        if veh_travelled_distance >= 0:
                 # print("eerste: ", abs(traci_data[vehicle][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]))
                 # print("tweede: ", abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]))
-                print("Collision between: ", car, " and ", VEH_ID)
-                for col in collisions:
-                    if col == (car, VEH_ID):
-                        return (False, False)
-                collisions.append((car, VEH_ID))
-                if traci_data[car][VAR_POSITION][0] > traci_data[VEH_ID][VAR_POSITION][0]:  # Fout van rode auto
-                    print("Fout van de rode auto")
-                    redAccident = True
-                    return (True, False)
-                return (True, True)
 
-            for vehicle in CARS:
-                if car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
-                        traci_data[car][VAR_ANGLE] == traci_data[vehicle][VAR_ANGLE] == 180:    # van onder naar boven
-                    if 7.75 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:
-                        for col in collisions:
-                            if col == (car, vehicle) or (vehicle, car):
-                                return (False, False)
-                        print("Collision between: ", car, " and ", vehicle, " Is a crash on the car in front")
-                        print("Y van vehicle: ", traci_data[vehicle][VAR_POSITION][1])
-                        print("Y van car: ", traci_data[car][VAR_POSITION][1])
-                        print("Verschil: ", traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1])
-                        collisions.append((car, vehicle))
-                        return (True, True)
-                elif car != vehicle and traci_data[car][VAR_ANGLE] == traci_data[vehicle][VAR_ANGLE] == 0:
-                    if 7.75 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:
-                        for col in collisions:
-                            if col == (car, vehicle) or (vehicle, car):
-                                return (False, False)
-                        print("Collision between: ", car, " and ", vehicle, " Is a crash on the car in front")
-                        print("Y van vehicle: ", traci_data[vehicle][VAR_POSITION][1])
-                        print("Y van car: ", traci_data[car][VAR_POSITION][1])
-                        print("Verschil: ", traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1])
-                        collisions.append((car, vehicle))
-                        return (True, True)
+                if car == VEH_ID:
+                    for vehicle in CARS:
+                        if vehicle not in traci_data:
+                            continue
+                        if abs(traci_data[vehicle][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) <= 3.0 \
+                         and abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) <= 3.0:
+                            if traci_data[vehicle][VAR_POSITION][0] > traci_data[VEH_ID][VAR_POSITION][0]:  # Fout van rode auto
+                                for col in collisions:
+                                    if col == (vehicle, VEH_ID):
+                                        return False, False
+                                print("Collision between: ", VEH_ID, " and ", vehicle)
+                                print("Fout van de rode auto@@@@@@@@@@@@@@")
+                                collisions.append((vehicle, VEH_ID))
+                                global redAccident
+                                redAccident = True
+                                return True, True
 
-            # for vehicle in CARS:
-            #     if car != vehicle and vehicle != VEH_ID and car != VEH_ID and abs(traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) < 2.5:   # Kijk ook naar X as
-            #         # print("Collisions: ", collisions)
-            #         # check to make sure the accident has not already been reported
-            #         for col in collisions:
-            #             if col == (vehicle, car) or col == (car, vehicle):
-            #                 return False
-            #         print("Collision between: ", vehicle, " and ", car, " Is a crash on the car in front")
-            #         collisions.append((vehicle, car))
-            #         return True
+                if car != VEH_ID and car in traci_data and VEH_ID in traci_data and \
+                        abs(traci_data[car][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) <= 3.0\
+                        and abs(traci_data[car][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) <= 3.0:
+                        # and (abs(traci_data[car][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]) > 0 or abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]) > 0): # haal dit weg waarschijnlijk
+                    # print("eerste: ", abs(traci_data[vehicle][VAR_POSITION][0] - traci_data[VEH_ID][VAR_POSITION][0]))
+                    # print("tweede: ", abs(traci_data[vehicle][VAR_POSITION][1] - traci_data[VEH_ID][VAR_POSITION][1]))
+                    print("Collision between: ", car, " and ", VEH_ID)
+                    alreadyRegistered = False
+                    for col in collisions:
+                        if col == (car, VEH_ID):
+                            alreadyRegistered = True
+                            # return (False, False)
+                    if not alreadyRegistered:
+                        collisions.append((car, VEH_ID))
+                        if traci_data[car][VAR_POSITION][0] > traci_data[VEH_ID][VAR_POSITION][0]:  # Fout van rode auto
+                            print("Fout van de rode auto")
+                            redAccident = True
+                            return True, False
+                        return True, True
 
-    else:
-        return False
+                for vehicle in CARS:
+                    # if car == "AUTO4" and vehicle == "AUTO2":
+                    #     print("FOCK DIE SHIT")
+                    #     print(traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0])
+                    #     print(traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1])
+                    if vehicle not in traci_data:
+                        # print(vehicle)
+                        continue
+                    # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+                    # print(car, traci_data[car][VAR_POSITION][1])
+                    # print(vehicle, traci_data[vehicle][VAR_POSITION][1])
+                    # print(car, traci_data[car][VAR_POSITION][0])
+                    # print(vehicle, traci_data[vehicle][VAR_POSITION][0])
+                    # print(car, vehicle, traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1])
+                    # print(car, vehicle, traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1])
+                    if car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
+                            traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0] >= 50:    # van onder naar boven
+                        if 7.60 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:   # car / vehicle
+                            acc = False
+                            for col in collisions:
+                                if col == (car, vehicle) or col == (vehicle, car):
+                                    acc = True
+                            if acc:
+                                continue
+                            print("Collision between: ", car, " and ", vehicle, " Is a crash on the car in front ONDER NAAR BOVEN")
+                            print("@@@Y van vehicle: ", traci_data[vehicle][VAR_POSITION][1])
+                            print("Y van car: ", traci_data[car][VAR_POSITION][1])
+                            print("Verschil: ", traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1])
+                            collisions.append((car, vehicle))
+                            return True, True
+                    elif car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
+                            traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0]:  # van boven naar beneden
+                        if 7.60 >= (traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) > 0:   # vehicle / car
+                            acc = False
+                            for col in collisions:
+                                if col == (car, vehicle) or col == (vehicle, car):
+                                    acc = True
+                            if acc:
+                                continue
+                            print("Collision between: ", car, " and ", vehicle, " Is a crash on the car in front BOVEN NAAR BENEDEN")
+                            print("Y van vehicle: ", traci_data[car][VAR_POSITION][1])
+                            print("Y van car: ", traci_data[vehicle][VAR_POSITION][1])
+                            print("Verschil: ", traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1])
+                            collisions.append((car, vehicle))
+                            return True, True
+
+                # for vehicle in CARS:
+                #     if car != vehicle and vehicle != VEH_ID and car != VEH_ID and abs(traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) < 2.5:   # Kijk ook naar X as
+                #         # print("Collisions: ", collisions)
+                #         # check to make sure the accident has not already been reported
+                #         for col in collisions:
+                #             if col == (vehicle, car) or col == (car, vehicle):
+                #                 return False
+                #         print("Collision between: ", vehicle, " and ", car, " Is a crash on the car in front")
+                #         collisions.append((vehicle, car))
+                #         return True
+
+        else:
+            return False, False
+        return False, False
+    except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(car, exc_type, fname, exc_tb.tb_lineno)
+                pass
+
 
 
 def speedReward(speed):
@@ -193,32 +227,33 @@ class SumoEnv(gym.Env):
     def set_state(self):
         for car in CARS:
             try:
-                speed = self.traci_data[car][VAR_SPEED]
+                if car in self.traci_data:
+                    speed = self.traci_data[car][VAR_SPEED]
 
-                position_grid = np.zeros(shape=(13, 6))
-                car_position = self.traci_data[car][VAR_POSITION]
+                    position_grid = np.zeros(shape=(13, 6))
+                    car_position = self.traci_data[car][VAR_POSITION]
 
-                # filter out VEH_ID
-                data = [self.traci_data[a] for a in self.traci_data if a != car]
-                for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
-                    relative_x = pos[0] - car_position[0]
-                    relative_y = pos[1] - car_position[1]
-                    x_index = int(relative_x/5)
-                    y_index = 6 - int(relative_y/5)
+                    # filter out VEH_ID
+                    data = [self.traci_data[a] for a in self.traci_data if a != car]
+                    for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
+                        relative_x = pos[0] - car_position[0]
+                        relative_y = pos[1] - car_position[1]
+                        x_index = int(relative_x/5)
+                        y_index = 6 - int(relative_y/5)
 
-                    # Make sure that the index doesn't go out of bounds
-                    if 0 <= x_index <= 5 and 0 <= y_index <= 12:
-                        if (angle == 180 and y_index > 6) or (angle == 0 and y_index < 6):
-                            # Filter out the cars that have passed the junction.
-                            pass
-                        else:
-                            position_grid[y_index][x_index] = 1
+                        # Make sure that the index doesn't go out of bounds
+                        if 0 <= x_index <= 5 and 0 <= y_index <= 12:
+                            if (angle == 180 and y_index > 6) or (angle == 0 and y_index < 6):
+                                # Filter out the cars that have passed the junction.
+                                pass
+                            else:
+                                position_grid[y_index][x_index] = 1
 
-                self.state = np.reshape(np.append([speed], position_grid), (1, self.observation_space.shape[0]))
+                    self.state = np.reshape(np.append([speed], position_grid), (1, self.observation_space.shape[0]))
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                # print(car, exc_type, fname, exc_tb.tb_lineno)
+                print(car, exc_type, fname, exc_tb.tb_lineno)
                 pass
 
     def step(self, action, car):
@@ -243,31 +278,33 @@ class SumoEnv(gym.Env):
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            # print(car, exc_type, fname, exc_tb.tb_lineno)
+            print(car, exc_type, fname, exc_tb.tb_lineno)
             pass
 
     def secondStep(self, car):
-        accident = False
         try:
-            pos = self.traci_data[car][VAR_DISTANCE]
-            accident = detectCollision(self.traci_data, pos, car)
-            global redAccident
-            if car == VEH_ID and redAccident:
-                redAccident = False
-                return np.array(self.state), - 1000, True, {}
-            if accident[0]:
-                print("############# Collision detected #############")
-                if accident[1]:
+            if car in self.traci_data:
+                pos = self.traci_data[car][VAR_DISTANCE]
+                accident, penalty = detectCollision(self.traci_data, pos, car)
+                global redAccident
+                if car == VEH_ID and redAccident:
+                    redAccident = False
                     return np.array(self.state), - 1000, True, {}
-                else:
-                    reward = getReward(self.traci_data, car)
-                    self.set_state()
-                    return np.array(self.state), reward, True, {}
-                # return np.array(self.state), - 1000, True, {}  # 12000 is goed maar geen rem
+                if accident:
+                    print("###################################### Collision detected ######################################", accident, penalty)
+                    if penalty:
+                        return np.array(self.state), - 1000, True, {}
+                    else:
+                        reward = getReward(self.traci_data, car)
+                        self.set_state()
+                        return np.array(self.state), reward, True, {}
+            else:
+                return np.array(self.state), 0, True, {}
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            # print(car, exc_type, fname, exc_tb.tb_lineno)
+            print(car, exc_type, fname, exc_tb.tb_lineno)
+            print(Exception, e)
             pass
 
         try:
@@ -290,13 +327,13 @@ class SumoEnv(gym.Env):
         except KeyError as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            # print(car, exc_type, fname, exc_tb.tb_lineno)
+            print(car, exc_type, fname, exc_tb.tb_lineno)
             # CARS.remove(car)
             pass
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            # print(car, exc_type, fname, exc_tb.tb_lineno)
+            print(car, exc_type, fname, exc_tb.tb_lineno)
             pass
         # CARS.remove(car)
         return np.array(self.state), 0, True, {}

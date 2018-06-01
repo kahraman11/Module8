@@ -148,8 +148,6 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
 
                 env.simulationStep()
 
-                for car in CARS:
-
 
             # while len(CARS) > 0:
                 for agent in new_agents:

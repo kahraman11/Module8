@@ -77,7 +77,7 @@ def generate_routefile(file_location="data/junction.rou.xml"):
 def generate_random_routefile(counter):
     file_location = "data/junction" + str(counter) + ".rou.xml"
     rn.seed()
-    amount_of_cars = rn.randint(4, 4)   # 0, 10
+    amount_of_cars = rn.randint(0, 10)   # 0, 10
     print("Hoeveel auto's: ", amount_of_cars)
     temp_amount = amount_of_cars
     #CARS.append("AUTO")
