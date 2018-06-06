@@ -163,9 +163,14 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                                     action = actie
                                     break
 
+                            # print(car, next_state)
                             agent.remember(e, state, action, reward, next_state, done)
                             state = next_state
                             states.append((car, state))
+                            # if reward == 0:
+                            #     print("Before: ", new_agents)
+                            #     new_agents.remove(agent)
+                            #     print("After: ", new_agents)
                             # if done:
                             #     try:
                             #         # CARS.remove(car)

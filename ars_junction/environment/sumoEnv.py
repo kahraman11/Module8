@@ -165,6 +165,11 @@ def speedReward(speed):
         return 0
     else:
         # return -1 * (1 / (MAX_LANE_SPEED / (4 / 5))) * speed ** 5 + speed ** 4
+        if speed > 10:
+            print("speed is te hoog", speed, (MAX_LANE_SPEED - (2 * abs(MAX_LANE_SPEED - speed))) * 100)
+            return (MAX_LANE_SPEED - (2 * abs(MAX_LANE_SPEED - speed))) * 100
+        if speed < 5:
+            return (MAX_LANE_SPEED - (abs(MAX_LANE_SPEED - speed))) * -5
         return (MAX_LANE_SPEED - abs(MAX_LANE_SPEED - speed)) * 100
 
 def getReward(traci_data, car):
@@ -224,8 +229,7 @@ class SumoEnv(gym.Env):
                     traci.vehicle.setSpeedMode(veh, 23)
 
     # Sets the state to the currently known values
-    def set_state(self):
-        for car in CARS:
+    def set_state(self, car):
             try:
                 if car in self.traci_data:
                     speed = self.traci_data[car][VAR_SPEED]
@@ -235,25 +239,46 @@ class SumoEnv(gym.Env):
 
                     # filter out VEH_ID
                     data = [self.traci_data[a] for a in self.traci_data if a != car]
-                    for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
-                        relative_x = pos[0] - car_position[0]
-                        relative_y = pos[1] - car_position[1]
-                        x_index = int(relative_x/5)
-                        y_index = 6 - int(relative_y/5)
+                    if car == VEH_ID:
+                        for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
+                            relative_x = pos[0] - car_position[0]
+                            relative_y = pos[1] - car_position[1]
+                            x_index = int(relative_x/2.5)
+                            y_index = 6 - int(relative_y/5)
 
-                        # Make sure that the index doesn't go out of bounds
-                        if 0 <= x_index <= 5 and 0 <= y_index <= 12:
-                            if (angle == 180 and y_index > 6) or (angle == 0 and y_index < 6):
-                                # Filter out the cars that have passed the junction.
-                                pass
-                            else:
+                            # Make sure that the index doesn't go out of bounds
+                            if 0 <= x_index <= 5 and 0 <= y_index <= 12:
                                 position_grid[y_index][x_index] = 1
 
+                    elif self.traci_data[car][VAR_ANGLE] == 0:      # Van beneden naar boven GEEL
+                        for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
+                            relative_x = pos[0] - car_position[0]
+                            relative_y = pos[1] - car_position[1]
+                            x_index = int(relative_x/2.5) + 5
+                            y_index = 12 - int(relative_y/5)
+
+                            # Make sure that the index doesn't go out of bounds
+                            if 0 <= x_index <= 5 and 0 <= y_index <= 12:
+                                position_grid[y_index][x_index] = 1
+
+                    elif self.traci_data[car][VAR_ANGLE] == 180:      # Van boven naar beneden PAARS
+                        for pos, angle in [(x[VAR_POSITION], x[VAR_ANGLE]) for x in data]:
+                            relative_x = abs(pos[0] - car_position[0])
+                            relative_y = pos[1] - car_position[1]
+                            x_index = 5 - int(relative_x/2.5)
+                            y_index = int(relative_y/5) + 12       # start is onderaan
+
+                            # Make sure that the index doesn't go out of bounds
+                            if 0 <= x_index <= 5 and 0 <= y_index <= 12:
+                                position_grid[y_index][x_index] = 1
+
+                    # print(car, speed, position_grid)
                     self.state = np.reshape(np.append([speed], position_grid), (1, self.observation_space.shape[0]))
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 print(car, exc_type, fname, exc_tb.tb_lineno)
+                print(e)
                 pass
 
     def step(self, action, car):
@@ -289,14 +314,14 @@ class SumoEnv(gym.Env):
                 global redAccident
                 if car == VEH_ID and redAccident:
                     redAccident = False
-                    return np.array(self.state), - 1000, True, {}
+                    return np.array(self.state), - 500, True, {}
                 if accident:
-                    print("###################################### Collision detected ######################################", accident, penalty)
+                    print("############################### Collision detected ################################", accident, penalty)
                     if penalty:
-                        return np.array(self.state), - 1000, True, {}
+                        return np.array(self.state), - 500, True, {}
                     else:
                         reward = getReward(self.traci_data, car)
-                        self.set_state()
+                        self.set_state(car)
                         return np.array(self.state), reward, True, {}
             else:
                 return np.array(self.state), 0, True, {}
@@ -314,7 +339,7 @@ class SumoEnv(gym.Env):
                 #     return np.array(self.state), - 1000, True, {}
 
                 reward = getReward(self.traci_data, car)
-                self.set_state()
+                self.set_state(car)
 
                 # if 1 in self.state.position_grid:
                 #     print("Test")
@@ -375,7 +400,7 @@ class SumoEnv(gym.Env):
                 # print(car, exc_type, fname, exc_tb.tb_lineno)
                 pass
         traci.simulationStep()
-        self.set_state()
+        self.set_state(VEH_ID)
         return self.state
 
     def start(self, gui=False):
