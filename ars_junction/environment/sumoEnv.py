@@ -105,7 +105,7 @@ def detectCollision(traci_data, veh_travelled_distance, car):
                     # print(car, vehicle, traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1])
                     if car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
                             traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0] >= 50:    # van onder naar boven
-                        if 7.60 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:   # car / vehicle
+                        if 7.55 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:   # car / vehicle was 7.60
                             acc = False
                             for col in collisions:
                                 if col == (car, vehicle) or col == (vehicle, car):
@@ -120,7 +120,7 @@ def detectCollision(traci_data, veh_travelled_distance, car):
                             return True, True
                     elif car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
                             traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0]:  # van boven naar beneden
-                        if 7.60 >= (traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) > 0:   # vehicle / car
+                        if 7.55 >= (traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) > 0:   # vehicle / car was 7.60
                             acc = False
                             for col in collisions:
                                 if col == (car, vehicle) or col == (vehicle, car):
@@ -166,11 +166,11 @@ def speedReward(speed):
     else:
         # return -1 * (1 / (MAX_LANE_SPEED / (4 / 5))) * speed ** 5 + speed ** 4
         if speed > 10:
-            print("speed is te hoog", speed, (MAX_LANE_SPEED - (2 * abs(MAX_LANE_SPEED - speed))) * 100)
+            # print("speed is te hoog", speed, (MAX_LANE_SPEED - (2 * abs(MAX_LANE_SPEED - speed))) * 100)
             return (MAX_LANE_SPEED - (2 * abs(MAX_LANE_SPEED - speed))) * 100
-        if speed < 5:
-            return (MAX_LANE_SPEED - (abs(MAX_LANE_SPEED - speed))) * -5
-        return (MAX_LANE_SPEED - abs(MAX_LANE_SPEED - speed)) * 100
+        # if speed < 5:
+        #     return (MAX_LANE_SPEED - (abs(MAX_LANE_SPEED - speed))) * 0.01
+        return ((MAX_LANE_SPEED - abs(MAX_LANE_SPEED - speed)) ** 3) * 200
 
 def getReward(traci_data, car):
     # print(CARS)
@@ -314,11 +314,11 @@ class SumoEnv(gym.Env):
                 global redAccident
                 if car == VEH_ID and redAccident:
                     redAccident = False
-                    return np.array(self.state), - 500, True, {}
+                    return np.array(self.state), - 1000, True, {}
                 if accident:
                     print("############################### Collision detected ################################", accident, penalty)
                     if penalty:
-                        return np.array(self.state), - 500, True, {}
+                        return np.array(self.state), - 1000, True, {}
                     else:
                         reward = getReward(self.traci_data, car)
                         self.set_state(car)

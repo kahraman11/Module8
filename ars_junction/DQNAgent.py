@@ -33,8 +33,8 @@ File is based on the tutorial of
 @url{https://keon.io/deep-q-learning/}
 """
 # constant values
-TRAIN_EPISODES  = 10 #10000 is standaard
-TEST_EPISODES   = 100    #100 is standaard
+TRAIN_EPISODES  = 100 #10000 is standaard
+TEST_EPISODES   = 20    #100 is standaard
 MEMORY_SIZE     = 2000
 BATCH_SIZE      = 32
 MAX_STEPS       = 400   #400 is standaard
@@ -115,6 +115,7 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
         # print("CARS: ", CARS)
         counter = 0
         new_agents = []
+        hasDriven = []
 
         for car in CARS:
             new_agents.append(agents[counter])
@@ -158,25 +159,20 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                             next_state, reward, done, _ = env.secondStep(car)
                             next_state = np.reshape(next_state, [1, state_size])
 
-                            for (name, actie) in actions:
-                                if name == agent.name:
-                                    action = actie
-                                    break
+                            if reward != 0:
+                                if agent not in hasDriven:
+                                    hasDriven.append(agent)
+                                for (name, actie) in actions:
+                                    if name == agent.name:
+                                        action = actie
+                                        break
 
-                            # print(car, next_state)
-                            agent.remember(e, state, action, reward, next_state, done)
-                            state = next_state
-                            states.append((car, state))
-                            # if reward == 0:
-                            #     print("Before: ", new_agents)
-                            #     new_agents.remove(agent)
-                            #     print("After: ", new_agents)
-                            # if done:
-                            #     try:
-                            #         # CARS.remove(car)
-                            #     except:
-                            #         pass
-                            break
+                                # print(car, next_state)
+                                agent.remember(e, state, action, reward, next_state, done)
+                                state = next_state
+                                states.append((car, state))
+                                # print(hasDriven)
+                                break
 
         i = 0
         if training:
@@ -189,7 +185,7 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
         #    agent.save("save/cartpole-ddqn.h5")
 
         # print statistics of this episode
-        for agent in new_agents:
+        for agent in hasDriven:
             total_reward = sum([x[3] for x in agent.memory if x[0] == e])
             print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
                   .format(e+1, episodes, total_reward, agent.epsilon, agent.name))
@@ -220,7 +216,7 @@ if __name__ == "__main__":
 
     agents = []
 
-    trained = False
+    trained = True
     if not trained:
         env.log = False
         env.test = False
