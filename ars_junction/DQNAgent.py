@@ -1,3 +1,5 @@
+import pdb
+
 import numpy as np
 import random as rn
 import tensorflow as tf
@@ -33,10 +35,10 @@ File is based on the tutorial of
 @url{https://keon.io/deep-q-learning/}
 """
 # constant values
-TRAIN_EPISODES  = 100 #10000 is standaard
-TEST_EPISODES   = 20    #100 is standaard
+TRAIN_EPISODES  = 10 #10000 is standaard
+TEST_EPISODES   = 10    #100 is standaard
 MEMORY_SIZE     = 2000
-BATCH_SIZE      = 32
+BATCH_SIZE      = 100     #32 is standaard
 MAX_STEPS       = 400   #400 is standaard
 
 
@@ -61,11 +63,11 @@ class DQNAgent:
                         activation='relu',
                         kernel_initializer=initializers.glorot_normal(seed=1337),
                         bias_initializer=initializers.Constant(value=0)))
-        model.add(Dense(200,
+        model.add(Dense(79,
                         activation='relu',
                         kernel_initializer=initializers.glorot_normal(seed=1337),
                         bias_initializer=initializers.Constant(value=0)))
-        model.add(Dense(200,
+        model.add(Dense(79,
                         activation='relu',
                         kernel_initializer=initializers.glorot_normal(seed=1337),
                         bias_initializer=initializers.Constant(value=0)))
@@ -88,7 +90,26 @@ class DQNAgent:
 
     def replay(self, batch_size):
         minibatch = rn.sample(self.memory, batch_size)
-        for _, state, action, reward, next_state, done in minibatch:
+        # print('replay', self.name, ' batch_size:', len(minibatch))
+
+        # print(self.name)
+        print("gotReward: ", gotReward)
+        # print(DRIVEN)
+        # print("collisions ", collisions)
+        # print(minibatch)
+
+        for e, state, action, reward, next_state, done in minibatch:    # self.memory:, minibatch
+            if self.name in gotReward:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                reward = 1
+
+            for crash in collisions:
+                if crash[0] == self.name:
+                    # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+                    reward = -1
+
+            # print(self.name, reward)
+
             target = reward
             if not done:
                 target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0])) # voorspel de volgende state
@@ -116,6 +137,7 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
         counter = 0
         new_agents = []
         hasDriven = []
+        speeds = []
 
         for car in CARS:
             new_agents.append(agents[counter])
@@ -149,7 +171,6 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
 
                 env.simulationStep()
 
-
             # while len(CARS) > 0:
                 for agent in new_agents:
                     # print(car)
@@ -159,7 +180,9 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                             next_state, reward, done, _ = env.secondStep(car)
                             next_state = np.reshape(next_state, [1, state_size])
 
-                            if reward != 0:
+                            if reward == - 10:
+                                print(DRIVEN)
+                            if car in DRIVEN:
                                 if agent not in hasDriven:
                                     hasDriven.append(agent)
                                 for (name, actie) in actions:
@@ -169,10 +192,24 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
 
                                 # print(car, next_state)
                                 agent.remember(e, state, action, reward, next_state, done)
+                                speeds.append((car, state[0][0]))
                                 state = next_state
                                 states.append((car, state))
                                 # print(hasDriven)
                                 break
+
+        for car in hasDriven:
+            counter = 0
+            value = 0
+            for double in speeds:
+                if double[0] == car:
+                    value += double[1]
+                    counter += 1
+            if counter != 0:
+                avgSpeeds.append((car.name, value/counter))
+            else:
+                avgSpeeds.append((car.name, 0))
+            print(avgSpeeds)
 
         i = 0
         if training:
@@ -185,12 +222,15 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
         #    agent.save("save/cartpole-ddqn.h5")
 
         # print statistics of this episode
-        for agent in hasDriven:
-            total_reward = sum([x[3] for x in agent.memory if x[0] == e])
-            print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
-                  .format(e+1, episodes, total_reward, agent.epsilon, agent.name))
+        for car in DRIVEN:
+            for agent in hasDriven:
+                if car == agent.name:
+                    total_reward = sum([x[3] for x in agent.memory if x[0] == e])
+                    print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
+                          .format(e+1, episodes, total_reward, agent.epsilon, agent.name))
 
-            # Start experience replay if the agent.memory > batch_size
+        # Start experience replay if the agent.memory > batch_size
+        for agent in hasDriven:
             if len(agent.memory) > batch_size and training:
                 agent.replay(batch_size)
 
@@ -199,9 +239,24 @@ def plotResults():
     env.reset()
     np.save('data', env.result)
     leg = []
+    test = agents
+
+    # print(test.pop(0).memory[0][1][0][0])
+
+    # print(env.result)
     for i, episode in enumerate(env.result):
-        plt.plot(episode)
-        leg.append('episode {}'.format(i+1))
+        for _ in agents:
+            try:
+                plt.plot(test.pop(0).memory[0][1][0][0])
+                leg.append("car {}".format(i+1))
+            except:
+                pass
+
+    # print(env.result)
+
+    # for i, episode in enumerate(env.result):
+    #     plt.plot(episode)
+    #     leg.append('episode {}'.format(i+1))
 
     plt.legend(leg, loc='upper left')
     plt.xlabel('Time (0.1s/step)')
@@ -216,7 +271,7 @@ if __name__ == "__main__":
 
     agents = []
 
-    trained = True
+    trained = False
     if not trained:
         env.log = False
         env.test = False

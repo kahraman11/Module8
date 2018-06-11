@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import fileinput
+import pdb
 
 import constants
 import gym
@@ -36,7 +37,11 @@ np.random.seed(42)
 rn.seed(12345)
 counter = 0
 
-collisions = []
+# collisions = []
+# global gotReward
+# gotReward = []
+# global hasCrashed
+# hasCrashed = []
 
 redAccident = False
 #CARS = [VEH_ID]
@@ -155,7 +160,6 @@ def detectCollision(traci_data, veh_travelled_distance, car):
                 pass
 
 
-
 def speedReward(speed):
     # print("speed: ", speed)
     # print("eerste gedeelte: ", -1 * (1 / (MAX_LANE_SPEED / (4 / 5))) * speed ** 5)
@@ -172,15 +176,25 @@ def speedReward(speed):
         #     return (MAX_LANE_SPEED - (abs(MAX_LANE_SPEED - speed))) * 0.01
         return ((MAX_LANE_SPEED - abs(MAX_LANE_SPEED - speed)) ** 3) * 200
 
+
 def getReward(traci_data, car):
     # print(CARS)
     # for vehicle in CARS:
         # print(car)
-        speed = traci_data[car][VAR_SPEED]
-        reward = speedReward(speed)
-        reward *= 10/speedReward(MAX_LANE_SPEED)
-        # print(car, ": ", reward, " en nu de speed: ", speed)
-        return reward
+        if car not in DRIVEN and traci_data[car][VAR_DISTANCE] > 0:
+            DRIVEN.append(car)
+
+        # if traci_data[car][VAR_SPEED] > 10:
+        #     if car not in gotReward:
+        #         gotReward.append(car)
+        #         return 0
+
+        if traci_data[car][VAR_DISTANCE] > 91:
+            if car not in gotReward:
+                gotReward.append(car)
+                print(gotReward)
+                return 1
+        return 0
 
 
 class SumoEnv(gym.Env):
@@ -314,15 +328,20 @@ class SumoEnv(gym.Env):
                 global redAccident
                 if car == VEH_ID and redAccident:
                     redAccident = False
-                    return np.array(self.state), - 1000, True, {}
+                    hasCrashed.append(car)
+                    return np.array(self.state), - 1, True, {}  # -1
                 if accident:
-                    print("############################### Collision detected ################################", accident, penalty)
+                    print("############################### Collision detected ################################", accident, penalty, car)
+                    if car not in DRIVEN:
+                        DRIVEN.append(car)
                     if penalty:
-                        return np.array(self.state), - 1000, True, {}
+                        hasCrashed.append(car)
+                        return np.array(self.state), - 1, True, {}  # -1
                     else:
-                        reward = getReward(self.traci_data, car)
+                        # reward = getReward(self.traci_data, car)
                         self.set_state(car)
-                        return np.array(self.state), reward, True, {}
+                        print("hier kom ik dan")
+                        return np.array(self.state), 0, True, {}
             else:
                 return np.array(self.state), 0, True, {}
         except Exception as e:
@@ -369,6 +388,9 @@ class SumoEnv(gym.Env):
     def reset(self):
         del CARS[:]
         del collisions[:]
+        del DRIVEN[:]
+        del gotReward[:]
+        del hasCrashed[:]
         if self.test and len(self.run) != 0:
             self.result.append(list(self.run))
             self.run.clear()
