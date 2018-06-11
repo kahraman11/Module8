@@ -103,6 +103,10 @@ class DQNAgent:
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 reward = 1
 
+            # if self.memory[-1][3] == -1:
+            #     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            #     reward = -1
+
             for crash in collisions:
                 if crash[0] == self.name:
                     # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
@@ -198,18 +202,18 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                                 # print(hasDriven)
                                 break
 
-        for car in hasDriven:
-            counter = 0
-            value = 0
-            for double in speeds:
-                if double[0] == car:
-                    value += double[1]
-                    counter += 1
-            if counter != 0:
+        if training:
+            for car in hasDriven:
+                counter = 1
+                value = 0
+                # print("Speeds: ", speeds)
+                for double in speeds:
+                    # print(double)
+                    if double[0] == car.name:
+                        if double[1] > 0:
+                            value += double[1]
+                            counter += 1
                 avgSpeeds.append((car.name, value/counter))
-            else:
-                avgSpeeds.append((car.name, 0))
-            print(avgSpeeds)
 
         i = 0
         if training:
@@ -244,13 +248,22 @@ def plotResults():
     # print(test.pop(0).memory[0][1][0][0])
 
     # print(env.result)
-    for i, episode in enumerate(env.result):
-        for _ in agents:
-            try:
-                plt.plot(test.pop(0).memory[0][1][0][0])
-                leg.append("car {}".format(i+1))
-            except:
-                pass
+    print("avgSpeeds: ", avgSpeeds)
+    for agent in agents:
+        leg.append(agent.name)
+        result = []
+        for double in avgSpeeds:
+            if agent.name == double[0]:
+                result.append(double[1])
+        plt.plot(result)
+
+    # for i, episode in enumerate(env.result):
+    #     for _ in agents:
+    #         try:
+    #             plt.plot(test.pop(0).memory[0][1][0][0])
+    #             leg.append("car {}".format(i+1))
+    #         except:
+    #             pass
 
     # print(env.result)
 
@@ -259,8 +272,8 @@ def plotResults():
     #     leg.append('episode {}'.format(i+1))
 
     plt.legend(leg, loc='upper left')
-    plt.xlabel('Time (0.1s/step)')
-    plt.ylabel('Speed (m/s)')
+    plt.xlabel('Episodes')
+    plt.ylabel('Avergae Speed (m/s)')
     plt.show()
 
 
