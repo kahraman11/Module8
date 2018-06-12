@@ -35,8 +35,8 @@ File is based on the tutorial of
 @url{https://keon.io/deep-q-learning/}
 """
 # constant values
-TRAIN_EPISODES  = 10 #10000 is standaard
-TEST_EPISODES   = 10    #100 is standaard
+TRAIN_EPISODES  = 100 #10000 is standaard
+TEST_EPISODES   = 100    #100 is standaard
 MEMORY_SIZE     = 2000
 BATCH_SIZE      = 100     #32 is standaard
 MAX_STEPS       = 400   #400 is standaard
@@ -97,10 +97,11 @@ class DQNAgent:
         # print(DRIVEN)
         # print("collisions ", collisions)
         # print(minibatch)
+        # print(self.name, self.memory[-1])
 
         for e, state, action, reward, next_state, done in minibatch:    # self.memory:, minibatch
             if self.name in gotReward:
-                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 reward = 1
 
             # if self.memory[-1][3] == -1:
@@ -194,7 +195,6 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                                         action = actie
                                         break
 
-                                # print(car, next_state)
                                 agent.remember(e, state, action, reward, next_state, done)
                                 speeds.append((car, state[0][0]))
                                 state = next_state
@@ -202,7 +202,7 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
                                 # print(hasDriven)
                                 break
 
-        if training:
+        if not training:
             for car in hasDriven:
                 counter = 1
                 value = 0
@@ -230,12 +230,22 @@ def trainOrTest(batch_size, episodes, training):    # episodes = 10000
             for agent in hasDriven:
                 if car == agent.name:
                     total_reward = sum([x[3] for x in agent.memory if x[0] == e])
+                    # print(agent.name, agent.memory[-10:-1])
+                    # if agent.memory[-1][3] == -1:
+                    #     print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
+                    #           .format(e + 1, episodes, -1, agent.epsilon, agent.name))
+                    # elif total_reward == -1:
+                    #     print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
+                    #       .format(e+1, episodes, 0, agent.epsilon, agent.name))
+                    # else:
+                    #     print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
+                    #           .format(e + 1, episodes, total_reward, agent.epsilon, agent.name))
                     print("episode: {:d}/{:d}, total reward: {:.2f}, e: {:.2} agent: {:s}"
-                          .format(e+1, episodes, total_reward, agent.epsilon, agent.name))
+                                     .format(e + 1, episodes, total_reward, agent.epsilon, agent.name))
 
         # Start experience replay if the agent.memory > batch_size
         for agent in hasDriven:
-            if len(agent.memory) > batch_size and training:
+            if len(agent.memory) > batch_size: # and training:
                 agent.replay(batch_size)
 
 
@@ -284,7 +294,7 @@ if __name__ == "__main__":
 
     agents = []
 
-    trained = False
+    trained = True
     if not trained:
         env.log = False
         env.test = False

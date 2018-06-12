@@ -4,7 +4,7 @@
 
     <input>
         <net-file value="junction.net.xml"/>
-<route-files value="junction11.rou.xml"/>
+<route-files value="junction101.rou.xml"/>
     </input>
 
     <gui-settings-file value="gui-settings.cfg" />

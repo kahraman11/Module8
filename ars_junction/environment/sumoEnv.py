@@ -110,7 +110,7 @@ def detectCollision(traci_data, veh_travelled_distance, car):
                     # print(car, vehicle, traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1])
                     if car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
                             traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0] >= 50:    # van onder naar boven
-                        if 7.55 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0:   # car / vehicle was 7.60
+                        if 7.55 >= (traci_data[vehicle][VAR_POSITION][1] - traci_data[car][VAR_POSITION][1]) > 0 and traci_data[vehicle][VAR_DISTANCE] > 0.5:   # car / vehicle was 7.60
                             acc = False
                             for col in collisions:
                                 if col == (car, vehicle) or col == (vehicle, car):
@@ -125,7 +125,7 @@ def detectCollision(traci_data, veh_travelled_distance, car):
                             return True, True
                     elif car != VEH_ID and car != vehicle and vehicle != VEH_ID and \
                             traci_data[car][VAR_POSITION][0] == traci_data[vehicle][VAR_POSITION][0]:  # van boven naar beneden
-                        if 7.55 >= (traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) > 0:   # vehicle / car was 7.60
+                        if 7.55 >= (traci_data[car][VAR_POSITION][1] - traci_data[vehicle][VAR_POSITION][1]) > 0 and traci_data[car][VAR_DISTANCE] > 0.5:   # vehicle / car was 7.60
                             acc = False
                             for col in collisions:
                                 if col == (car, vehicle) or col == (vehicle, car):
@@ -329,21 +329,21 @@ class SumoEnv(gym.Env):
                 if car == VEH_ID and redAccident:
                     redAccident = False
                     hasCrashed.append(car)
-                    return np.array(self.state), - 1, True, {}  # -1
+                    return np.array(self.state), - 1, False, {}  # -1 True
                 if accident:
                     print("############################### Collision detected ################################", accident, penalty, car)
                     if car not in DRIVEN:
                         DRIVEN.append(car)
                     if penalty:
                         hasCrashed.append(car)
-                        return np.array(self.state), - 1, True, {}  # -1
+                        return np.array(self.state), - 1, False, {}  # -1 True
                     else:
                         # reward = getReward(self.traci_data, car)
                         self.set_state(car)
                         print("hier kom ik dan")
-                        return np.array(self.state), 0, True, {}
+                        return np.array(self.state), 0, False, {}     # 0 True
             else:
-                return np.array(self.state), 0, True, {}
+                return np.array(self.state), 0, False, {}    # 0 True
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
